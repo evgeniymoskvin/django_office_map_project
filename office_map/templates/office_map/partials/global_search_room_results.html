@@ -1,0 +1,64 @@
+{% if rooms %}
+    <div class="global-search-group">
+        <div class="global-search-group-title">
+            Помещения
+        </div>
+
+        {% for room in rooms %}
+            {% if room.contour_id %}
+                <button
+                    type="button"
+                    class="global-search-result global-search-room-result"
+                    data-room-floor-id="{{ room.floor_id }}"
+                    data-room-contour-id="{{ room.contour_id }}"
+                >
+                    <div class="global-search-employee-name">
+                        {% if room.number %}
+                            Помещение {{ room.number }}
+                        {% else %}
+                            Помещение
+                        {% endif %}
+                    </div>
+
+                    {% if room.name %}
+                        <div class="global-search-employee-details">
+                            {{ room.name }}
+                        </div>
+                    {% endif %}
+
+                    {% if room.floor_name %}
+                        <div class="global-search-employee-location">
+                            {{ room.floor_name }}
+                        </div>
+                    {% endif %}
+                </button>
+            {% else %}
+                <div class="global-search-result global-search-result-unplaced">
+                    <div class="global-search-employee-name">
+                        {% if room.number %}
+                            Помещение {{ room.number }}
+                        {% else %}
+                            Помещение
+                        {% endif %}
+                    </div>
+
+                    {% if room.name %}
+                        <div class="global-search-employee-details">
+                            {{ room.name }}
+                        </div>
+                    {% endif %}
+
+                    {% if room.floor_name %}
+                        <div class="global-search-employee-location">
+                            {{ room.floor_name }}
+                        </div>
+                    {% endif %}
+
+                    <div class="global-search-unplaced-label">
+                        Нет контура на плане
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

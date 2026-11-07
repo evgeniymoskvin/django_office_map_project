@@ -1,0 +1,37 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта офиса</title>
+</head>
+<body>
+    <h1>Карта офиса</h1>
+
+    {% for building in buildings %}
+        <section>
+            <h2>{{ building.name }}</h2>
+
+            {% if building.address %}
+                <p>{{ building.address }}</p>
+            {% endif %}
+
+            <ul>
+                {% for floor in building.floors.all %}
+                    <li>
+                        <a href="{% url 'office_map:floor_detail' floor.id %}">
+                            {{ floor }}
+                        </a>
+                    </li>
+                {% empty %}
+                    <li>В здании пока нет этажей.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% empty %}
+        <p>Здания пока не добавлены.</p>
+    {% endfor %}
+</body>
+</html>

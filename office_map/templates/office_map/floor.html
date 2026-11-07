@@ -1,0 +1,259 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ floor }} — План этажа</title>
+
+    <link
+            rel="stylesheet"
+            href="{% static 'office_map/css/office.css' %}"
+    >
+
+    <script
+            type="text/javascript"
+            src="{% static 'office_map/jQuery-4.0.0/jquery-4.0.0.min.js' %}"
+    ></script>
+
+    <script
+            src="{% static 'office_map/js/office.js' %}"
+            defer
+    ></script>
+</head>
+
+<body class="{% if embed %}embed-mode{% endif %}">
+
+{% if not embed %}
+    <header class="header">
+        <div class="header-navigation">
+            <a href="{% url 'office_map:map_home' %}" class="home-link">
+                Все здания
+            </a>
+
+            <div class="floor-navigation">
+                <select id="building-select">
+                    {% for item in buildings %}
+                        <option
+                                value="{{ item.id }}"
+                                {% if item.id == building.id %}selected{% endif %}
+                        >
+                            {{ item.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <select id="floor-select">
+                    {% for item in buildings %}
+                        {% for item_floor in item.floors.all %}
+                            <option
+                                    value="{{ item_floor.id }}"
+                                    data-building-id="{{ item.id }}"
+                                    {% if item_floor.id == floor.id %}selected{% endif %}
+                            >
+                                {{ item_floor.name }}
+                            </option>
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="global-employee-search">
+            <input
+                    type="search"
+                    id="global-employee-search-input"
+                    placeholder="Найти сотрудника или помещение..."
+                    autocomplete="off"
+            >
+
+            <div
+                    id="global-employee-search-results"
+                    class="global-employee-search-results"
+                    hidden
+            ></div>
+        </div>
+
+        <div class="map-controls">
+            <button type="button" id="fit-plan">
+                По размеру окна
+            </button>
+
+            <button type="button" id="reset-plan">
+                Сбросить масштаб
+            </button>
+
+            <span id="zoom-value">100%</span>
+        </div>
+    </header>
+{% endif %}
+
+<main
+        class="map-container"
+        id="map-viewport"
+        data-embed="{{ embed|yesno:'true,false' }}"
+        data-focus-employee-id="{% if focus_employee_placement %}{{ focus_employee_placement.id }}{% endif %}"
+        data-focus-contour-id="{{ focus_contour_id|default:'' }}"
+        data-focus-x="{% if focus_employee_placement %}{{ focus_employee_placement.x }}{% endif %}"
+        data-focus-y="{% if focus_employee_placement %}{{ focus_employee_placement.y }}{% endif %}"
+        data-furniture-move-url="{% url 'office_map:move_furniture' '00000000-0000-0000-0000-000000000000' %}"
+        data-employee-move-url="{% url 'office_map:move_employee' '00000000-0000-0000-0000-000000000000' %}"
+        data-room-detail-url="{% url 'office_map:room_detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-can-edit="{{ can_edit_layout|yesno:'true,false' }}"
+        data-employee-detail-url="{% url 'office_map:employee_detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-furniture-rotate-url="{% url 'office_map:rotate_furniture' '00000000-0000-0000-0000-000000000000' %}"
+        data-furniture-catalog-url="{% url 'office_map:furniture_catalog' floor.id %}"
+        data-furniture-add-url="{% url 'office_map:add_furniture' floor.id %}"
+        data-furniture-delete-url="{% url 'office_map:delete_furniture' '00000000-0000-0000-0000-000000000000' %}"
+        data-employee-catalog-url="{% url 'office_map:employee_catalog' floor.id %}"
+        data-employee-add-url="{% url 'office_map:add_employee' floor.id %}"
+        data-employee-delete-url="{% url 'office_map:delete_employee' '00000000-0000-0000-0000-000000000000' %}"
+        data-floor-url-template="{% url 'office_map:floor_detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-employee-search-url="{% url 'office_map:employee_search' %}"
+        data-room-assign-url="{% url 'office_map:assign_room_to_contour' '00000000-0000-0000-0000-000000000000' %}"
+        data-building-id="{{ building.id }}"
+        data-room-search-url="{% url 'office_map:room_search' %}"
+
+>
+    {% if plan %}
+        <div class="map-content" id="map-content">
+            <img
+                    id="floor-plan"
+                    class="floor-plan"
+                    src="{{ plan.svg_file.url }}"
+                    alt="План этажа"
+                    draggable="false"
+            >
+
+            {{ contours_svg|safe }}
+            {{ furniture_svg|safe }}
+            {{ employees_svg|safe }}
+        </div>
+    {% else %}
+        <p class="empty-plan">
+            Для этого этажа пока нет активного SVG-плана.
+        </p>
+    {% endif %}
+
+    <aside class="room-panel" id="room-panel" hidden>
+        <div class="room-panel-header">
+            <h2 id="room-title">Помещение</h2>
+
+            <button
+                    type="button"
+                    class="room-panel-close"
+                    id="room-panel-close"
+                    aria-label="Закрыть"
+            >
+                ×
+            </button>
+        </div>
+
+        <div id="room-content">
+            <p class="room-panel-muted">
+                Выбери помещение на плане.
+            </p>
+        </div>
+    </aside>
+
+    {% if can_edit_layout %}
+        <aside class="furniture-panel" id="furniture-panel" hidden>
+            <div class="furniture-panel-header">
+                <h2>Каталог мебели</h2>
+                <button
+                        type="button"
+                        id="furniture-panel-close"
+                        aria-label="Закрыть каталог"
+                >×
+                </button>
+            </div>
+
+            <div class="furniture-panel-hint">
+                Перетащи предмет на план
+            </div>
+
+            <div id="furniture-catalog-list">
+                <p>Загрузка каталога...</p>
+            </div>
+
+            <div class="furniture-search">
+                <input
+                        type="search"
+                        id="furniture-search-input"
+                        placeholder="Поиск мебели..."
+                        autocomplete="off"
+                >
+            </div>
+
+        </aside>
+
+        <button
+                type="button"
+                id="furniture-panel-open"
+                class="furniture-panel-open"
+        >
+            + Мебель
+        </button>
+    {% endif %}
+
+
+    {% if can_edit_layout %}
+        <aside class="employee-catalog-panel" id="employee-catalog-panel" hidden>
+            <div class="furniture-panel-header">
+                <h2>Сотрудники</h2>
+                <button
+                        type="button"
+                        id="employee-panel-close"
+                        aria-label="Закрыть каталог"
+                >×
+                </button>
+            </div>
+
+            <div class="furniture-panel-hint">
+                Перетащи сотрудника на план
+            </div>
+
+            <div class="employee-catalog-search">
+                <input
+                        type="search"
+                        id="employee-search-input"
+                        placeholder="Поиск по ФИО или должности..."
+                        autocomplete="off"
+                >
+            </div>
+
+            <div id="employee-catalog-list">
+                <p>Загрузка сотрудников...</p>
+            </div>
+        </aside>
+
+        <button
+                type="button"
+                id="employee-panel-open"
+                class="employee-panel-open"
+        >
+            + Сотрудник
+        </button>
+    {% endif %}
+
+
+    {% if can_edit_layout %}
+        <div id="furniture-context-menu" class="furniture-context-menu" hidden>
+            <button type="button" id="furniture-delete-button">
+                Удалить объект
+            </button>
+        </div>
+    {% endif %}
+
+    {% if can_edit_layout %}
+        <div id="employee-context-menu" class="context-menu" hidden>
+            <button type="button" id="employee-delete-button">
+                Убрать сотрудника с плана
+            </button>
+        </div>
+    {% endif %}
+</main>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+<button
+    type="button"
+    id="close-room-panel"
+    class="room-panel-close"
+    aria-label="Закрыть"
+>
+    ×
+</button>
+
+<h3>
+    {% if room %}
+        Помещение {{ room.number }}
+    {% else %}
+        Помещение не назначено
+    {% endif %}
+</h3>
+
+{% if room.name %}
+    <p>{{ room.name }}</p>
+{% endif %}
+
+{% if room.description %}
+    <p>{{ room.description }}</p>
+{% endif %}
+
+{% if area_m2 != None %}
+    <p class="room-area">
+        <strong>Площадь:</strong> {{ area_m2 }} м²
+    </p>
+{% endif %}
+
+{% if can_edit %}
+    <div class="room-assignment">
+
+        {% if room_edit_mode %}
+
+            <h4>Выбор помещения</h4>
+
+            <input
+                type="search"
+                id="room-assignment-search"
+                placeholder="Поиск по номеру или названию"
+                autocomplete="off"
+            >
+
+            <select id="room-assignment-select">
+
+                <option value="">
+                    Не привязывать помещение
+                </option>
+
+                {% for item in available_rooms %}
+                    <option value="{{ item.id }}"
+                        data-search="{{ item.number }} {{ item.name|default:'' }}"
+                        {% if room and room.id|stringformat:"s" == item.id|stringformat:"s" %}selected{% endif %}>
+                        {{ item.number }}{% if item.name %} — {{ item.name }}{% endif %}
+                    </option>
+                {% endfor %}
+
+            </select>
+
+            <div class="room-assignment-actions">
+                <button type="button" id="room-assignment-save">
+                    Сохранить
+                </button>
+
+                <button type="button" id="room-assignment-cancel">
+                    Отмена
+                </button>
+            </div>
+
+        {% else %}
+
+            <button type="button" id="room-assignment-edit">
+                {% if room %}
+                    Изменить привязку
+                {% else %}
+                    Привязать помещение
+                {% endif %}
+            </button>
+
+        {% endif %}
+
+    </div>
+{% endif %}
+
+<div class="room-employees">
+
+    <h4>Сотрудники ({{ employees|length }})</h4>
+
+    {% for employee in employees %}
+        {% include "office_map/partials/room_employee.html" with employee=employee %}
+    {% empty %}
+        <p>Сотрудников в этом помещении нет.</p>
+    {% endfor %}
+
+</div>

@@ -1,0 +1,26 @@
+{% for employee in employees %}
+    <div
+        class="employee-catalog-item"
+        data-employee-id="{{ employee.id }}"
+        data-employee-name="{{ employee.full_name }}"
+        data-employee-job="{{ employee.job_title|default:'' }}"
+        draggable="true"
+    >
+        {% if employee.photo_url %}
+            <img src="{{ employee.photo_url }}" alt="" loading="lazy">
+        {% else %}
+            <div class="employee-catalog-photo-placeholder">
+                {{ employee.initials }}
+            </div>
+        {% endif %}
+
+        <div class="employee-catalog-info">
+            <strong>{{ employee.full_name }}</strong>
+            <small>
+                {{ employee.job_title|default:'Должность не указана' }}
+            </small>
+        </div>
+    </div>
+{% empty %}
+    <p>Нет свободных сотрудников для размещения.</p>
+{% endfor %}

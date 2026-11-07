@@ -1,0 +1,1530 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f3f5;
+}
+
+/* --------------------------------------------------
+   Шапка и элементы управления
+-------------------------------------------------- */
+
+/* Верхняя панель */
+.header {
+    height: 68px;
+    padding: 0 22px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.98);
+    border-bottom: 1px solid #e8edf4;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Кнопки управления картой */
+.map-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.map-controls button {
+    padding: 9px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #334155;
+
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+
+    transition:
+        background 0.2s,
+        border-color 0.2s,
+        box-shadow 0.2s,
+        transform 0.2s;
+}
+
+.map-controls button:hover {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.08);
+}
+
+.map-controls button:active {
+    transform: translateY(1px);
+}
+
+/* Индикатор масштаба */
+#zoom-value {
+    min-width: 55px;
+    padding: 7px 9px;
+
+    border-radius: 8px;
+    background: #f1f5f9;
+
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------
+   Область плана
+-------------------------------------------------- */
+
+.map-container {
+    height: calc(100vh - 60px);
+    overflow: hidden;
+    background: #e9ecef;
+    position: relative;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.map-container.dragging {
+    cursor: grabbing;
+}
+
+.map-content {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+}
+
+.floor-plan,
+.room-contours-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.floor-plan {
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Контуры помещений */
+
+.room-contour {
+    fill: rgba(148, 163, 184, 0.05);
+    stroke: #64748b;
+    stroke-width: 450;
+    vector-effect: none;
+    pointer-events: all;
+    cursor: pointer;
+    transition: fill 0.2s ease,
+    stroke 0.2s ease,
+    stroke-width 0.2s ease;
+}
+
+/* Наведение */
+
+.room-contour:hover {
+    fill: rgba(20, 184, 166, 0.14);
+    stroke: #14b8a6;
+    stroke-width: 750;
+}
+
+/* Выбранное помещение */
+
+.room-contour.room-selected{
+    fill: rgba(139, 92, 246, 0.18);
+    stroke: #8b5cf6;
+    stroke-width: 950;
+}
+
+/* Номер помещения */
+
+.room-number-badge {
+    pointer-events: none;
+}
+
+.room-number-badge circle {
+    fill: #ffffff;
+    stroke: #64748b;
+    stroke-width: 350;
+}
+
+.room-number-badge text {
+    fill: #334155;
+    font-size: 1800px;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+}
+
+/* --------------------------------------------------
+   Мебель
+-------------------------------------------------- */
+
+.furniture-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.furniture-item {
+    pointer-events: visiblePainted;
+    cursor: pointer;
+}
+
+.furniture-debug {
+    cursor: grab;
+}
+
+.furniture-debug.furniture-selected {
+    cursor: grabbing;
+}
+
+.furniture-selected .furniture-item {
+    stroke: #198754;
+}
+
+/* --------------------------------------------------
+   Сотрудники на плане
+-------------------------------------------------- */
+
+.employee-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.employee-debug {
+    cursor: grab;
+    pointer-events: all;
+}
+
+.employee-debug:active {
+    cursor: grabbing;
+}
+
+.employee-marker-background {
+    fill: #dbeafe;
+}
+
+.employee-marker-border {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 700;
+    pointer-events: none;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.employee-avatar {
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.employee-initials {
+    fill: #1e3a8a;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.employee-label {
+    fill: #1f2937;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.employee-selected {
+    opacity: 0.8;
+}
+
+/* Курсор сотрудников при наличии прав на редактирование */
+#map-viewport[data-can-edit="true"] .employee-debug {
+    cursor: grab;
+}
+
+/* Курсор сотрудников без прав на редактирование */
+#map-viewport[data-can-edit="false"] .employee-debug {
+    cursor: pointer;
+}
+
+/* Подсветка маркера при наведении */
+.employee-debug:hover .employee-marker-border {
+    stroke: #3b82f6;
+    stroke-width: 1100;
+}
+
+/* --------------------------------------------------
+   Панель информации о помещении
+-------------------------------------------------- */
+
+/* Панель информации о помещении */
+.room-panel {
+    position: absolute;
+    z-index: 20;
+    top: 16px;
+    right: 16px;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 380px;
+    max-width: calc(100% - 32px);
+    height: auto;
+    max-height: calc(100% - 32px);
+
+    padding: 22px;
+
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 18px;
+
+    box-shadow:
+        0 12px 32px rgba(15, 23, 42, 0.10),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+    user-select: text;
+    touch-action: pan-y;
+    overflow: hidden;
+    cursor: default;
+}
+
+.room-panel[hidden] {
+    display: none;
+}
+
+/* Заголовок панели */
+.room-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    flex: 0 0 auto;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+
+    border-bottom: 1px solid #eef2f7;
+}
+
+.room-panel-header h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+}
+
+
+/* Кнопка закрытия */
+.room-panel-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #f1f5f9;
+    color: #64748b;
+
+    font-size: 23px;
+    line-height: 1;
+
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.room-panel-close:hover {
+    background: #e0f2fe;
+    color: #0284c7;
+    transform: rotate(90deg);
+}
+/* Информация о помещении */
+
+.room-info-row {
+    flex: 0 0 auto;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.room-info-label {
+    display: block;
+    margin-bottom: 4px;
+
+    color: #6c757d;
+    font-size: 12px;
+}
+
+/* Внутри панели помещения обычный курсор */
+
+/* Поля ввода */
+.room-panel input,
+.room-panel select {
+    cursor: text;
+}
+
+/* Выпадающий список */
+.room-panel select {
+    cursor: pointer;
+}
+
+/* Кнопки панели */
+.room-panel button {
+    cursor: pointer;
+}
+
+/* --------------------------------------------------
+   Список сотрудников
+-------------------------------------------------- */
+
+/* Список сотрудников */
+.room-employees {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 10px;
+    margin-top: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
+
+.room-employees h4 {
+    flex: 0 0 auto;
+    margin: 0 0 4px;
+    padding-bottom: 10px;
+    color: #334155;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Карточка сотрудника */
+.room-employee {
+    flex: 0 0 auto;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e8edf4;
+    border-radius: 13px;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.room-employee:hover {
+    background: #ffffff;
+    border-color: #bae6fd;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.10);
+    transform: translateY(-2px);
+}
+
+/* Основная строка */
+.room-employee-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Фотографии */
+.room-employee-photo,
+.room-employee-placeholder {
+    display: block;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #dbeafe;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 7px rgba(15, 23, 42, 0.12);
+}
+
+/* Заглушка без фотографии */
+.room-employee-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1d4ed8;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* Информация */
+.room-employee-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.room-employee-name {
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.room-employee-job {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.room-employee-legacy {
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+/* Предупреждение */
+.room-employee-warning {
+    margin-top: 8px;
+    padding: 7px 9px;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+/* Сообщения и пустые состояния */
+
+.room-panel-muted {
+    flex: 0 0 auto;
+
+    color: #6c757d;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------
+   Адаптация для небольших экранов
+-------------------------------------------------- */
+
+@media (max-width: 600px) {
+    .header {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    .map-controls {
+        gap: 5px;
+    }
+
+    .map-controls button {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    .room-panel {
+        top: 8px;
+        right: 8px;
+
+        width: 340px;
+        max-width: calc(100% - 16px);
+        max-height: calc(100% - 16px);
+
+        padding: 14px;
+    }
+}
+
+/* Встроенный режим карты */
+
+html,
+body.embed-mode {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.embed-mode .map-container {
+    width: 100%;
+    height: 100vh;
+    height: 100%;
+}
+
+/* Подсветка сотрудника при переходе по ссылке */
+.employee-focused {
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.65));
+}
+
+/* Подсветка помещения сотрудника */
+.room-contour.room-focused {
+    stroke: #3b82f6 !important;
+    stroke-width: 650 !important;
+    fill: rgba(59, 130, 246, 0.13) !important;
+    filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.45));
+}
+
+/* Карточка сотрудника */
+.employee-detail-card {
+    padding: 8px 0;
+}
+
+/* Верхняя часть карточки */
+.employee-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+/* Аватар */
+.employee-detail-header .room-employee-photo {
+    width: 76px;
+    height: 76px;
+    flex: 0 0 76px;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+}
+
+/* Имя сотрудника */
+.employee-detail-header h3 {
+    margin: 0 0 7px;
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+/* Должность */
+.employee-detail-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Список характеристик */
+.employee-detail-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Отдельная характеристика */
+.employee-detail-row {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eef2f7;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.employee-detail-row:hover {
+    background: #f8fafc;
+}
+
+/* Название характеристики */
+.employee-detail-label {
+    margin-bottom: 5px;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Значение */
+.employee-detail-value {
+    color: #334155;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+/* Каталог мебели */
+
+/* Панель каталога мебели */
+.furniture-panel {
+    position: absolute;
+    z-index: 30;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    max-height: calc(100% - 30px);
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 18px;
+    box-shadow:
+        0 12px 32px rgba(15, 23, 42, 0.10),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+
+.furniture-panel[hidden] {
+    display: none;
+}
+
+.furniture-panel:not([hidden]) {
+    display: flex;
+}
+
+/* Заголовок панели */
+.furniture-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.furniture-panel-header h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+/* Кнопка закрытия */
+#furniture-panel-close {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 23px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+#furniture-panel-close:hover {
+    background: #e0f2fe;
+    color: #0284c7;
+    transform: rotate(90deg);
+}
+
+/* Подсказка */
+.furniture-panel-hint {
+    padding: 10px 16px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* Список мебели */
+#furniture-catalog-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 10px 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Карточка мебели */
+.furniture-catalog-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px;
+    margin-bottom: 8px;
+    border: 1px solid #e8edf4;
+    border-radius: 13px;
+    background: #f8fafc;
+    cursor: grab;
+    transition:
+        background 0.2s,
+        border-color 0.2s,
+        box-shadow 0.2s,
+        transform 0.2s;
+}
+
+.furniture-catalog-item:hover {
+    background: #ffffff;
+    border-color: #bae6fd;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.10);
+    transform: translateY(-2px);
+}
+
+.furniture-catalog-item:active {
+    cursor: grabbing;
+}
+
+.furniture-catalog-item strong {
+    display: block;
+}
+
+.furniture-catalog-item small {
+    color: #666;
+}
+
+/* Кнопка открытия каталога */
+.furniture-panel-open {
+    display: block;
+    position: absolute;
+    z-index: 25;
+    top: 15px;
+    left: 15px;
+    padding: 10px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.97);
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.furniture-panel-open:hover {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+}
+
+/* Поиск */
+.furniture-search {
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+#furniture-search-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    outline: none;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+
+#furniture-search-input:focus {
+    border-color: #7dd3fc;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+.furniture-catalog-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin-bottom: 6px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #fafafa;
+    cursor: grab;
+}
+
+/* Превью мебели */
+.furniture-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 68px;
+    width: 68px;
+    height: 68px;
+    box-sizing: border-box;
+    padding: 5px;
+    background: #ffffff;
+    border: 1px solid #e8edf4;
+    border-radius: 11px;
+    overflow: hidden;
+}
+
+.furniture-preview svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Название и размеры */
+.furniture-catalog-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.furniture-catalog-info strong {
+    display: block;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.furniture-catalog-info small {
+    display: block;
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.furniture-search {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+
+#furniture-search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+.furniture-catalog-info {
+    min-width: 0;
+}
+
+.furniture-catalog-info strong {
+    display: block;
+}
+
+.furniture-catalog-info small {
+    display: block;
+    color: #666;
+    margin-top: 4px;
+}
+
+.furniture-preview {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.furniture-preview svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.furniture-catalog-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.furniture-catalog-info {
+    min-width: 0;
+}
+
+.furniture-catalog-info strong {
+    display: block;
+}
+
+.furniture-catalog-info small {
+    display: block;
+    color: #666;
+    margin-top: 4px;
+}
+
+.furniture-dragging {
+    opacity: 0.5;
+}
+
+.furniture-context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 160px;
+    padding: 5px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.furniture-context-menu[hidden] {
+    display: none;
+}
+
+.furniture-context-menu button {
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #dc3545;
+    text-align: left;
+    cursor: pointer;
+}
+
+.furniture-context-menu button:hover {
+    background: #f8f8f8;
+}
+
+/* Каталог сотрудников */
+
+/* Панель каталога сотрудников */
+.employee-catalog-panel {
+    position: absolute;
+    z-index: 30;
+    top: 15px;
+    left: 290px;
+    display: flex;
+    flex-direction: column;
+    width: 320px;
+    max-height: calc(100% - 30px);
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 18px;
+    box-shadow:
+        0 12px 32px rgba(15, 23, 42, 0.10),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+
+.employee-catalog-panel[hidden] {
+    display: none;
+}
+
+
+.employee-catalog-panel:not([hidden]) {
+    display: flex;
+}
+
+
+/* Кнопка закрытия */
+#employee-panel-close {
+    align-self: flex-end;
+    width: 34px;
+    height: 34px;
+    margin: 12px 12px 0 0;
+    border: 0;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 23px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+
+#employee-panel-close:hover {
+    background: #e0f2fe;
+    color: #0284c7;
+    transform: rotate(90deg);
+}
+
+/* Поиск */
+.employee-catalog-search {
+    padding: 12px 14px;
+}
+
+#employee-search-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    outline: none;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+#employee-search-input:focus {
+    border-color: #7dd3fc;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+
+/* Список сотрудников */
+#employee-catalog-list {
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    flex: 1;
+    padding: 4px 12px 12px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Карточка сотрудника */
+.employee-catalog-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px;
+    margin-bottom: 8px;
+    border: 1px solid #e8edf4;
+    border-radius: 13px;
+    background: #f8fafc;
+    cursor: grab;
+    transition:
+        background 0.2s,
+        border-color 0.2s,
+        box-shadow 0.2s,
+        transform 0.2s;
+}
+
+.employee-catalog-item:hover {
+    background: #ffffff;
+    border-color: #bae6fd;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.10);
+    transform: translateY(-2px);
+}
+
+
+.employee-catalog-item:active {
+    cursor: grabbing;
+}
+
+
+/* Фото и заглушка */
+.employee-catalog-item img,
+.employee-catalog-photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 2px 7px rgba(15, 23, 42, 0.12);
+}
+
+.employee-catalog-photo-placeholder {
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+/* Информация о сотруднике */
+.employee-catalog-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.employee-catalog-info strong,
+.employee-catalog-info small {
+    display: block;
+}
+
+.employee-catalog-info strong,
+.employee-catalog-info small {
+    display: block;
+}
+
+.employee-catalog-info strong {
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.employee-catalog-info small {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+
+/* Кнопка открытия каталога */
+.employee-panel-open {
+    position: absolute;
+    z-index: 25;
+    top: 65px;
+    left: 15px;
+    padding: 10px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.97);
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+
+.employee-panel-open:hover {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+}
+
+/* Перетаскиваемый сотрудник */
+.employee-catalog-item.employee-dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 190px;
+    padding: 5px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, .2);
+}
+
+.context-menu[hidden] {
+    display: none !important;
+}
+
+.context-menu button {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.context-menu button:hover {
+    background: #f0f0f0;
+}
+
+.header-navigation {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+
+.home-link {
+    color: #0d6efd;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.home-link:hover {
+    text-decoration: underline;
+}
+
+/* Навигация по этажам */
+.floor-navigation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.floor-navigation select {
+    max-width: 220px;
+    min-width: 120px;
+    padding: 9px 32px 9px 12px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    color: #334155;
+
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.floor-navigation select:hover {
+    border-color: #bae6fd;
+    background-color: #ffffff;
+}
+
+.floor-navigation select:focus {
+    border-color: #7dd3fc;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+
+@media (max-width: 700px) {
+    .header {
+        height: auto;
+        min-height: 60px;
+        padding: 10px;
+        flex-wrap: wrap;
+    }
+
+    .header-navigation {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .floor-navigation select {
+        max-width: 160px;
+    }
+}
+
+/* Глобальный поиск сотрудников */
+
+/* Контейнер глобального поиска */
+.global-employee-search {
+    position: relative;
+    width: 360px;
+    max-width: 100%;
+    z-index: 100;
+}
+
+/* Поле глобального поиска */
+#global-employee-search-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 14px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    outline: none;
+
+    background: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s,
+        background 0.2s;
+}
+
+#global-employee-search-input::placeholder {
+    color: #94a3b8;
+}
+
+#global-employee-search-input:focus {
+    border-color: #7dd3fc;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+/* Выпадающая панель результатов */
+.global-employee-search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #e8edf4;
+    border-radius: 14px;
+
+    box-shadow:
+        0 12px 32px rgba(15, 23, 42, 0.12),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Результат поиска */
+.global-search-result {
+    display: block;
+    padding: 11px 13px;
+    margin: 3px 6px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #334155;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background 0.2s,
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.global-search-result:last-child {
+    border-bottom: none;
+}
+
+.global-search-result:hover {
+    background: #f0f9ff;
+    border-color: #e0f2fe;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.06);
+}
+
+/* Имя сотрудника или номер помещения */
+.global-search-employee-name {
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+/* Дополнительная информация */
+.global-search-employee-details,
+.global-search-employee-location {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+/* Заголовки групп */
+.global-search-group-title {
+    padding: 12px 12px 6px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Пустой результат */
+.global-search-empty {
+    padding: 16px 13px;
+    color: #94a3b8;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* Пометка для сотрудников без размещения */
+.global-search-unplaced-label {
+    padding: 5px 0 0;
+    color: #b45309;
+    font-size: 11px;
+}
+
+/* Кнопки результатов помещений */
+.global-search-room-result {
+    width: calc(100% - 12px);
+    text-align: left;
+    font: inherit;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.global-search-room-result:hover {
+    background: #f0f9ff;
+    border-color: #e0f2fe;
+}
+
+
+@media (max-width: 900px) {
+    .global-employee-search {
+        width: 100%;
+    }
+}
+
+
+.room-assignment {
+    margin: 16px 0;
+}
+
+#room-assignment-search,
+#room-assignment-select {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 8px 0;
+    padding: 9px;
+}
+
+.room-assignment-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.room-assignment-actions button,
+#room-assignment-edit {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+
+
+.embed-mode .room-panel {
+    top: 12px;
+    right: 12px;
+    width: 360px;
+    max-width: calc(100% - 24px);
+    max-height: calc(100% - 24px);
+    padding: 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* Компактная карточка помещения и сотрудника в iframe */
+.embed-mode .room-panel-header {
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+}
+
+.embed-mode .room-panel-header h2 {
+    font-size: 18px;
+}
+
+.embed-mode .employee-detail-header {
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+}
+
+.embed-mode .employee-detail-fields {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+

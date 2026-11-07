@@ -1,0 +1,69 @@
+{% if employees %}
+    <div class="global-search-group">
+        <div class="global-search-group-title">
+            Сотрудники
+        </div>
+
+        {% for employee in employees %}
+            {% if employee.floor_url %}
+                <a
+                    class="global-search-result"
+                    href="{{ employee.floor_url }}"
+                >
+                    <div class="global-search-employee-name">
+                        {{ employee.full_name }}
+                    </div>
+
+                    <div class="global-search-employee-details">
+                        {% if employee.job_title or employee.department %}
+                            {% if employee.job_title %}{{ employee.job_title }}{% endif %}
+                            {% if employee.job_title and employee.department %} · {% endif %}
+                            {% if employee.department %}{{ employee.department }}{% endif %}
+                        {% else %}
+                            Должность не указана
+                        {% endif %}
+                    </div>
+
+                    <div class="global-search-employee-location">
+                        {% if employee.building %}{{ employee.building }}{% endif %}
+                        {% if employee.floor %}{% if employee.building %}, {% endif %}{{ employee.floor }}{% endif %}
+                        {% if employee.room %}{% if employee.building or employee.floor %}, {% endif %}каб. {{ employee.room }}{% endif %}
+                        {% if not employee.building and not employee.floor and not employee.room %}
+                            Расположение не указано
+                        {% endif %}
+                    </div>
+                </a>
+            {% else %}
+                <div class="global-search-result global-search-result-unplaced">
+                    <div class="global-search-employee-name">
+                        {{ employee.full_name }}
+                    </div>
+
+                    <div class="global-search-employee-details">
+                        {% if employee.job_title or employee.department %}
+                            {% if employee.job_title %}{{ employee.job_title }}{% endif %}
+                            {% if employee.job_title and employee.department %} · {% endif %}
+                            {% if employee.department %}{{ employee.department }}{% endif %}
+                        {% else %}
+                            Должность не указана
+                        {% endif %}
+                    </div>
+
+                    <div class="global-search-employee-location">
+                        {% if employee.building or employee.floor or employee.room %}
+                            {% if employee.building %}{{ employee.building }}{% endif %}
+                            {% if employee.floor %}{% if employee.building %}, {% endif %}{{ employee.floor }}{% endif %}
+                            {% if employee.room %}{% if employee.building or employee.floor %}, {% endif %}каб. {{ employee.room }}{% endif %}
+                        {% else %}
+                            Расположение не указано
+                        {% endif %}
+                    </div>
+
+                    <div class="global-search-unplaced-label">
+                        Не размещён на плане
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

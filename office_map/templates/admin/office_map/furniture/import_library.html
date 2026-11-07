@@ -1,0 +1,26 @@
+
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<h1>Импорт библиотеки мебели</h1>
+
+<p>
+    Выбери DXF-файл с определениями блоков мебели.
+    Существующие блоки будут обновлены, новые — добавлены.
+</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <div class="submit-row">
+        <input type="submit" value="Импортировать" class="default">
+        <a href="{% url 'admin:office_map_furnituremodel_changelist' %}">
+            Отмена
+        </a>
+    </div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+<button type="button" id="close-room-panel" class="room-panel-close" aria-label="Закрыть">×</button>
+
+
+<div class="employee-detail-card">
+    <div class="employee-detail-header">
+        {% if employee.photo_url %}
+            <img
+                class="room-employee-photo"
+                src="{{ employee.photo_url }}"
+                alt="{{ employee.full_name }}"
+            >
+        {% else %}
+            <div class="room-employee-photo room-employee-placeholder">
+                {{ employee.last_name|default:''|slice:":1" }}{{ employee.first_name|default:''|slice:":1" }}
+            </div>
+        {% endif %}
+
+        <div>
+            <h3>{{ employee.full_name }}</h3>
+            <p>{{ employee.job_title|default:'' }}</p>
+        </div>
+    </div>
+
+    <div class="employee-detail-fields">
+        {% if employee.job_title %}
+            <div class="employee-detail-row">
+                <div class="employee-detail-label">Должность</div>
+                <div class="employee-detail-value">{{ employee.job_title }}</div>
+            </div>
+        {% endif %}
+
+        {% if employee.department %}
+            <div class="employee-detail-row">
+                <div class="employee-detail-label">Подразделение</div>
+                <div class="employee-detail-value">{{ employee.department }}</div>
+            </div>
+        {% endif %}
+
+        {% if employee.department_group %}
+            <div class="employee-detail-row">
+                <div class="employee-detail-label">Группа</div>
+                <div class="employee-detail-value">{{ employee.department_group }}</div>
+            </div>
+        {% endif %}
+
+        {% if employee.phone %}
+            <div class="employee-detail-row">
+                <div class="employee-detail-label">Рабочий телефон</div>
+                <div class="employee-detail-value">{{ employee.phone }}</div>
+            </div>
+        {% endif %}
+
+        {% if employee.mobile_phone %}
+            <div class="employee-detail-row">
+                <div class="employee-detail-label">Мобильный телефон</div>
+                <div class="employee-detail-value">{{ employee.mobile_phone }}</div>
+            </div>
+        {% endif %}
+
+        {% if not employee.job_title and not employee.department and not employee.department_group and not employee.phone and not employee.mobile_phone %}
+            <p>Дополнительная информация отсутствует.</p>
+        {% endif %}
+    </div>
+</div>

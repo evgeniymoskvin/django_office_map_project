@@ -1,0 +1,21 @@
+{% for item in items %}
+    <div class="furniture-catalog-item"
+         data-furniture-id="{{ item.id }}"
+         data-furniture-name="{{ item.name }}"
+         draggable="true">
+
+        <div class="furniture-preview">
+            {{ item.preview_svg|safe }}
+        </div>
+
+        <div class="furniture-catalog-info">
+            <strong>{{ item.name }}</strong>
+
+            <small>
+                {{ item.width_mm }} × {{ item.height_mm }} мм
+            </small>
+        </div>
+    </div>
+{% empty %}
+    <p>В каталоге пока нет активной мебели.</p>
+{% endfor %}

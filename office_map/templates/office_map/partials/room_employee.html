@@ -1,0 +1,49 @@
+<div class="room-employee">
+    <div class="room-employee-main">
+
+        {% if employee.photo_url %}
+            <img
+                class="room-employee-photo"
+                src="{{ employee.photo_url }}"
+                alt="{{ employee.full_name }}"
+                loading="lazy"
+            >
+        {% else %}
+            <div class="room-employee-photo room-employee-placeholder">
+                {{ employee.last_name|first }}{{ employee.first_name|first }}
+            </div>
+        {% endif %}
+
+        <div class="room-employee-info">
+
+            <div class="room-employee-name">
+                {{ employee.full_name }}
+            </div>
+
+            <div class="room-employee-job">
+                {{ employee.job_title|default:"-" }}
+            </div>
+
+            {% if employee.phone %}
+                <div class="room-employee-job">
+                    Тел.: {{ employee.phone }}
+                </div>
+            {% endif %}
+
+            <div class="room-employee-legacy">
+                {% if employee.legacy_room %}
+                    В справочнике кабинет: {{ employee.legacy_room }}
+                {% else %}
+                    В справочнике кабинет не указан
+                {% endif %}
+            </div>
+
+            {% if employee.room_mismatch %}
+                <div class="room-employee-warning">
+                    ⚠ Номер кабинета не совпадает
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>

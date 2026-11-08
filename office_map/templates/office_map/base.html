@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>
+        {% block title %}
+            Title
+        {% endblock %}
+    </title>
+
+    <link rel="icon" type="image/x-icon" href="{% static 'office_map/favicon/favicon.png' %}"
+          sizes="any">
+    <link rel="stylesheet" href="{% static 'office_map/css/office.css' %}">
+    <script type="text/javascript" src="{% static 'office_map/jQuery-4.0.0/jquery-4.0.0.min.js' %}"></script>
+    <script src="{% static 'office_map/js/office.js' %}" defer></script>
+</head>
+
+<body class="{% if embed %}embed-mode{% endif %}">
+{% block content %}
+{% endblock %}
+</body>
+</html>

@@ -562,7 +562,7 @@ def generate_room_contours_svg(plan):
                     {
                         'cx': f'{center_x:.3f}',
                         'cy': f'{center_y:.3f}',
-                        'r': '10000',  # Радиус окружности с маркером помещения
+                        'r': '4000',  # Радиус окружности с маркером помещения
                     },
                 )
 
@@ -574,7 +574,7 @@ def generate_room_contours_svg(plan):
                         'y': f'{center_y:.3f}',
                         'text-anchor': 'middle',
                         'dominant-baseline': 'central',
-                        'style': 'font-size: 6500px !important; font-weight: 700;',
+                        'style': 'font-size: 2800px !important; font-weight: 700;',
                     },
                 )
 

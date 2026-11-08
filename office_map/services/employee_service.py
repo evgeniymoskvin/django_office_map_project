@@ -54,7 +54,7 @@ def get_employee_profile_data(employee):
     )
     # Получаем название должности и подразделения с учётом отсутствующих связей.
     department = (
-        employee.department.command_name
+        f'{employee.department.command_number} - {employee.department.command_name}'
         if employee.department_id
         else ''
     )

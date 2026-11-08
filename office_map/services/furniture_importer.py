@@ -14,6 +14,7 @@ from pathlib import Path
 import ezdxf
 from ezdxf import bbox
 from ezdxf.colors import int2rgb, aci2rgb
+import math
 
 from django.db import transaction
 
@@ -59,26 +60,16 @@ def get_dxf_color(entity, doc):
 
 def extract_hatch_paths(entity):
     """
-    Извлекает полилинейные контуры из DXF-элемента HATCH.
+    Извлекает контуры HATCH и преобразует дуговые сегменты
+    полилинейных границ в последовательность точек.
 
-    Обрабатывает PolylinePath, преобразуя координаты вершин
-    в список точек с числовыми значениями X и Y.
-
-    Контуры, которые не содержат подходящих вершин или имеют
-    некорректные координаты, пропускаются.
-
-    Возвращает:
-        hatch_paths — список обработанных контуров;
-        skipped_paths — количество пропущенных контуров.
-
-    EdgePath с дугами и отдельными рёбрами пока не поддерживается.
+    Параметр bulge определяет дугу между текущей и следующей
+    вершинами. Для плавного отображения дуга разбивается
+    на сегменты с угловым шагом не более 10 градусов.
     """
-
-    # Список успешно обработанных контуров и счётчик пропущенных.
     hatch_paths = []
     skipped_paths = 0
 
-    # Перебираем границы заливки HATCH.
     for boundary in entity.paths:
         vertices = getattr(boundary, 'vertices', None)
 
@@ -86,31 +77,226 @@ def extract_hatch_paths(entity):
             skipped_paths += 1
             continue
 
-        # Подготавливаем список координат текущего контура.
         points = []
 
-        # Получаем вершины полилинейного контура, если они доступны.
-        for vertex in vertices:
-            # Преобразуем координаты вершины в числа с плавающей точкой.
-            try:
-                x = float(vertex[0])
-                y = float(vertex[1])
-            except (TypeError, ValueError, IndexError):
-                points = []
-                break
+        # Перебираем вершины и соединяющие их сегменты.
+        vertex_count = len(vertices)
+        is_closed = bool(getattr(boundary, 'is_closed', False))
 
-            points.append({
-                'x': x,
-                'y': y,
-            })
+        segment_count = (
+            vertex_count if is_closed else vertex_count - 1
+        )
 
-        # Для контура нужны минимум три корректные точки.
+        try:
+            for i in range(segment_count):
+                current = vertices[i]
+                next_vertex = vertices[(i + 1) % vertex_count]
+
+                x1 = float(current[0])
+                y1 = float(current[1])
+                x2 = float(next_vertex[0])
+                y2 = float(next_vertex[1])
+
+                # Bulge хранится третьим значением вершины.
+                bulge = (
+                    float(current[2])
+                    if len(current) > 2
+                    else 0.0
+                )
+
+                # Добавляем начальную точку сегмента.
+                if not points:
+                    points.append({'x': x1, 'y': y1})
+
+                # Прямой сегмент — достаточно конечной точки.
+                if abs(bulge) < 1e-9:
+                    points.append({'x': x2, 'y': y2})
+                    continue
+
+                # Вычисляем параметры дуги по bulge.
+                dx = x2 - x1
+                dy = y2 - y1
+                chord = math.hypot(dx, dy)
+
+                if chord < 1e-9:
+                    continue
+
+                angle = 4.0 * math.atan(bulge)
+
+                # Центр окружности, проходящей через концы дуги.
+                offset = chord * (1.0 - bulge ** 2) / (4.0 * bulge)
+
+                center_x = (x1 + x2) / 2.0 - dy / chord * offset
+                center_y = (y1 + y2) / 2.0 + dx / chord * offset
+
+                radius = math.hypot(
+                    x1 - center_x,
+                    y1 - center_y,
+                )
+
+                start_angle = math.atan2(
+                    y1 - center_y,
+                    x1 - center_x,
+                )
+
+                # Количество отрезков: не более 10 градусов на каждый.
+                steps = max(
+                    1,
+                    math.ceil(abs(angle) / math.radians(10)),
+                )
+
+                # Добавляем промежуточные точки дуги.
+                for step in range(1, steps + 1):
+                    current_angle = (
+                            start_angle + angle * step / steps
+                    )
+
+                    points.append({
+                        'x': center_x + radius * math.cos(current_angle),
+                        'y': center_y + radius * math.sin(current_angle),
+                    })
+
+        except (TypeError, ValueError, IndexError, OverflowError):
+            points = []
+
+        # Для замкнутого контура нужно минимум три точки.
         if len(points) >= 3:
             hatch_paths.append(points)
         else:
             skipped_paths += 1
 
     return hatch_paths, skipped_paths
+
+
+def extract_polyline_segments(entity, angle_step=10):
+    """
+    Преобразует LWPOLYLINE в последовательность прямых сегментов.
+
+    Учитывает bulge, благодаря чему дуговые участки превращаются
+    в набор коротких отрезков.
+    """
+    vertices = entity.get_points('xyb')
+
+    if len(vertices) < 2:
+        return []
+
+    segments = []
+    vertex_count = len(vertices)
+
+    segment_count = (
+        vertex_count if entity.closed else vertex_count - 1
+    )
+
+    for i in range(segment_count):
+        current = vertices[i]
+        next_vertex = vertices[(i + 1) % vertex_count]
+
+        x1, y1, bulge = map(float, current)
+        x2, y2 = float(next_vertex[0]), float(next_vertex[1])
+
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Обычный прямой сегмент.
+        if abs(bulge) < 1e-9:
+            segments.append((x1, y1, x2, y2))
+            continue
+
+        chord = math.hypot(dx, dy)
+
+        if chord < 1e-9:
+            continue
+
+        # Вычисляем параметры дуги.
+        angle = 4.0 * math.atan(bulge)
+        offset = chord * (1.0 - bulge ** 2) / (4.0 * bulge)
+
+        center_x = (x1 + x2) / 2.0 - dy / chord * offset
+        center_y = (y1 + y2) / 2.0 + dx / chord * offset
+
+        radius = math.hypot(
+            x1 - center_x,
+            y1 - center_y,
+        )
+
+        start_angle = math.atan2(
+            y1 - center_y,
+            x1 - center_x,
+        )
+
+        steps = max(
+            1,
+            math.ceil(abs(angle) / math.radians(angle_step)),
+        )
+
+        points = [(x1, y1)]
+
+        for step in range(1, steps + 1):
+            current_angle = start_angle + angle * step / steps
+
+            points.append((
+                center_x + radius * math.cos(current_angle),
+                center_y + radius * math.sin(current_angle),
+            ))
+
+        # Каждую пару соседних точек сохраняем как отдельную линию.
+        for j in range(len(points) - 1):
+            start = points[j]
+            end = points[j + 1]
+
+            segments.append((
+                start[0],
+                start[1],
+                end[0],
+                end[1],
+            ))
+
+    return segments
+
+
+def extract_arc_segments(entity, angle_step=10):
+    """
+    Преобразует DXF-дугу ARC в последовательность прямых сегментов.
+
+    DXF хранит дугу через центр, радиус, начальный и конечный углы.
+    Углы задаются в градусах.
+    """
+    center = entity.dxf.center
+    radius = float(entity.dxf.radius)
+
+    start_angle = math.radians(float(entity.dxf.start_angle))
+    end_angle = math.radians(float(entity.dxf.end_angle))
+
+    # DXF ARC проходит против часовой стрелки.
+    sweep = (end_angle - start_angle) % (2 * math.pi)
+
+    if radius <= 0 or sweep < 1e-9:
+        return []
+
+    steps = max(
+        1,
+        math.ceil(math.degrees(sweep) / angle_step),
+    )
+
+    points = []
+
+    for i in range(steps + 1):
+        angle = start_angle + sweep * i / steps
+
+        points.append((
+            float(center.x) + radius * math.cos(angle),
+            float(center.y) + radius * math.sin(angle),
+        ))
+
+    segments = []
+
+    for i in range(len(points) - 1):
+        x1, y1 = points[i]
+        x2, y2 = points[i + 1]
+
+        segments.append((x1, y1, x2, y2))
+
+    return segments
 
 
 @transaction.atomic
@@ -197,6 +383,37 @@ def import_furniture_library(file_path):
                 })
 
                 block_lines += 1
+            elif entity_type == 'ARC':
+                segments = extract_arc_segments(entity)
+
+                for x1, y1, x2, y2 in segments:
+                    geometry.append({
+                        'type': 'line',
+                        'x1': x1,
+                        'y1': y1,
+                        'x2': x2,
+                        'y2': y2,
+                        'color': color,
+                        'layer': entity.dxf.layer,
+                    })
+
+                block_lines += len(segments)
+
+            elif entity_type == 'LWPOLYLINE':
+                segments = extract_polyline_segments(entity)
+
+                for x1, y1, x2, y2 in segments:
+                    geometry.append({
+                        'type': 'line',
+                        'x1': x1,
+                        'y1': y1,
+                        'x2': x2,
+                        'y2': y2,
+                        'color': color,
+                        'layer': entity.dxf.layer,
+                    })
+
+                block_lines += len(segments)
 
             # Извлекаем полилинейные контуры заливки HATCH.
             elif entity_type == 'HATCH':

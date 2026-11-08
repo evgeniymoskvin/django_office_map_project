@@ -23,7 +23,7 @@ ET.register_namespace('', SVG_NS)
 PLACEHOLDER_PATH = 'office_map/img/no-photo.png'
 
 # Диаметр маркера сотрудника в миллиметрах DXF.
-AVATAR_DIAMETER_MM = 600
+AVATAR_DIAMETER_MM = 800
 
 
 def svg_tag(name):
@@ -225,15 +225,50 @@ def _build_employee_group(
     )
 
     # Добавляем подпись сотрудника под маркером.
+
+    label_font_size = avatar_radius * 0.45
+    label_y = avatar_radius + avatar_radius * 0.65
+
+    # Приблизительно рассчитываем ширину текста с учётом его длины.
+    label_width = max(
+        len(label_text) * label_font_size * 0.6,
+        label_font_size,
+    )
+
+    # Размеры белой подложки с небольшими отступами.
+    padding_x = label_font_size * 0.35
+    padding_y = label_font_size * 0.2
+
+    background_width = label_width + padding_x * 2
+    background_height = label_font_size + padding_y * 2
+
+    # Белая подложка располагается за текстом.
+    ET.SubElement(
+        group,
+        svg_tag('rect'),
+        {
+            'class': 'employee-label-background',
+            'x': str(-background_width / 2),
+            'y': str(label_y - label_font_size * 0.85 - padding_y),
+            'width': str(background_width),
+            'height': str(background_height),
+            'rx': str(label_font_size * 0.2),
+            'fill': '#FFFFFF',
+            'fill-opacity': '0.95',
+            'stroke': 'none',
+        },
+    )
+
+    # Сам текст располагается поверх белой подложки.
     label = ET.SubElement(
         group,
         svg_tag('text'),
         {
             'class': 'employee-label',
             'x': '0',
-            'y': str(avatar_radius + avatar_radius * 0.65),
+            'y': str(label_y),
             'text-anchor': 'middle',
-            'font-size': str(avatar_radius * 0.45),
+            'font-size': str(label_font_size),
         },
     )
     label.text = label_text

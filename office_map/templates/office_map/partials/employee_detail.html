@@ -16,7 +16,7 @@
         {% endif %}
 
         <div>
-            <h3>{{ employee.full_name }}</h3>
+            <div class="room-panel-title">{{ employee.full_name }}</div>
             <p>{{ employee.job_title|default:'' }}</p>
         </div>
     </div>
@@ -31,14 +31,14 @@
 
         {% if employee.department %}
             <div class="employee-detail-row">
-                <div class="employee-detail-label">Подразделение</div>
+                <div class="employee-detail-label">Отдел</div>
                 <div class="employee-detail-value">{{ employee.department }}</div>
             </div>
         {% endif %}
 
         {% if employee.department_group %}
             <div class="employee-detail-row">
-                <div class="employee-detail-label">Группа</div>
+                <div class="employee-detail-label">Управление</div>
                 <div class="employee-detail-value">{{ employee.department_group }}</div>
             </div>
         {% endif %}

@@ -287,8 +287,13 @@ $(document).ready(function () {
     }
 
     $viewport.on('wheel', function (event) {
-        // Не мешаем прокручивать список сотрудников.
-        if ($(event.target).closest('.room-employees').length) {
+        // Не масштабируем карту, если колесо находится
+        // над панелями и каталогами.
+        if (
+            $(event.target).closest(
+                '.room-panel, .employee-catalog-panel, .furniture-panel'
+            ).length
+        ) {
             return;
         }
 
@@ -1290,6 +1295,10 @@ $(document).ready(function () {
         openRoomPanel(activeRoomContour, false);
     });
 
+    $roomPanel.on('wheel', function (event) {
+        event.stopPropagation();
+    });
+
     $roomPanel.on('input', '#room-assignment-search', function () {
         const search = $(this).val().trim().toLowerCase();
 
@@ -1932,8 +1941,6 @@ $(document).ready(function () {
     let employeeSearchRequest = null;
     let roomSearchRequest = null;
     let globalSearchVersion = 0;
-
-
 
 
 // Результаты сотрудников.

@@ -1,32 +1,32 @@
 <button
-    type="button"
-    id="close-room-panel"
-    class="room-panel-close"
-    aria-label="Закрыть"
+        type="button"
+        id="close-room-panel"
+        class="room-panel-close"
+        aria-label="Закрыть"
 >
     ×
 </button>
 
-<h3>
+<div class="room-panel-title">
     {% if room %}
         Помещение {{ room.number }}
     {% else %}
         Помещение не назначено
     {% endif %}
-</h3>
+</div>
 
 {% if room.name %}
-    <p>{{ room.name }}</p>
+    <div class="room-panel-name">{{ room.name }}</div>
 {% endif %}
 
 {% if room.description %}
-    <p>{{ room.description }}</p>
+    <div class="room-panel-description">{{ room.description }}</div>
 {% endif %}
 
 {% if area_m2 != None %}
-    <p class="room-area">
-        <strong>Площадь:</strong> {{ area_m2 }} м²
-    </p>
+    <div class="room-area">
+        <div class="text-13px-regular" style="line-height: 1.45;">Площадь: <span class="text-13px-bold"> {{ area_m2 }} м²</span></div>
+    </div>
 {% endif %}
 
 {% if can_edit %}
@@ -37,10 +37,10 @@
             <h4>Выбор помещения</h4>
 
             <input
-                type="search"
-                id="room-assignment-search"
-                placeholder="Поиск по номеру или названию"
-                autocomplete="off"
+                    type="search"
+                    id="room-assignment-search"
+                    placeholder="Поиск по номеру или названию"
+                    autocomplete="off"
             >
 
             <select id="room-assignment-select">
@@ -51,8 +51,8 @@
 
                 {% for item in available_rooms %}
                     <option value="{{ item.id }}"
-                        data-search="{{ item.number }} {{ item.name|default:'' }}"
-                        {% if room and room.id|stringformat:"s" == item.id|stringformat:"s" %}selected{% endif %}>
+                            data-search="{{ item.number }} {{ item.name|default:'' }}"
+                            {% if room and room.id|stringformat:"s" == item.id|stringformat:"s" %}selected{% endif %}>
                         {{ item.number }}{% if item.name %} — {{ item.name }}{% endif %}
                     </option>
                 {% endfor %}
@@ -86,7 +86,7 @@
 
 <div class="room-employees">
 
-    <h4>Сотрудники ({{ employees|length }})</h4>
+    <div class="room-panel-employees">Сотрудники ({{ employees|length }})</div>
 
     {% for employee in employees %}
         {% include "office_map/partials/room_employee.html" with employee=employee %}

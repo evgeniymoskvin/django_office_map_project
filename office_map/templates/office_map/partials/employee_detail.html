@@ -5,9 +5,9 @@
     <div class="employee-detail-header">
         {% if employee.photo_url %}
             <img
-                class="room-employee-photo"
-                src="{{ employee.photo_url }}"
-                alt="{{ employee.full_name }}"
+                    class="room-employee-photo"
+                    src="{{ employee.photo_url }}"
+                    alt="{{ employee.full_name }}"
             >
         {% else %}
             <div class="room-employee-photo room-employee-placeholder">
@@ -18,6 +18,18 @@
         <div>
             <div class="room-panel-title">{{ employee.full_name }}</div>
             <p>{{ employee.job_title|default:'' }}</p>
+
+            {% if vacation %}
+                <div class="employee-vacation-status">
+                    <span class="employee-vacation-badge">
+                        В отпуске
+                    </span>
+                    <div class="employee-vacation-period">
+                        {{ vacation.vacation_start|date:"d.m.Y" }}
+                        — {{ vacation.vacation_end|date:"d.m.Y" }}
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 

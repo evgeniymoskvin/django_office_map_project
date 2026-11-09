@@ -1731,3 +1731,28 @@ body.embed-mode {
     font-family: "Rosatom_bold", serif;
     /*line-height: 1.25;*/
 }
+
+/*Статус отпуска*/
+
+.employee-vacation-status {
+    margin-top: 8px;
+}
+
+.employee-vacation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background-color: #FFF3CD;
+    color: #493602;
+    font-size: 12px;
+    font-family: "Rosatom_regular", serif;
+}
+
+.employee-vacation-period {
+    margin-top: 5px;
+    font-size: 12px;
+    font-family: "Rosatom_light", serif;
+    color: gray;
+}

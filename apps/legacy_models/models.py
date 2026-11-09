@@ -1,4 +1,10 @@
-from django.core.files.storage import FileSystemStorage
+import datetime
+
+from django.core.exceptions import ValidationError
+from uuid import UUID
+
+from django.db.models import Q, F
+from uuid_utils import uuid7
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
 from django.utils import timezone
@@ -138,3 +144,93 @@ class MoreDetailsEmployeeModel(models.Model):
         return f'{self.emp}'
 
 
+# Отпуска
+
+def generate_uuid7():
+    return UUID(str(uuid7()))
+
+class BaseVacationModel(models.Model):
+    """Абстрактная базовая модель."""
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=generate_uuid7,
+        editable=False,
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name="Дата создания",
+        auto_now_add=True,
+    )
+
+    class Meta:
+        abstract = True
+
+class VacationsModel(BaseVacationModel):
+
+    class VacationTypeChoices(models.TextChoices):
+        FIRST = 'FIRST', 'Первичный'
+
+    """Таблица отпусков"""
+    employee = models.ForeignKey(EmployeeModel,
+                                 on_delete=models.SET_NULL,
+                                 null=True,
+                                 blank=True,
+                                 verbose_name="Сотрудник")
+    vacation_start = models.DateField(verbose_name="Начало отпуска")
+    day_count = models.PositiveIntegerField(verbose_name="Количество дней",
+                                    null=False)
+    vacation_end = models.DateField(verbose_name="Окончание отпуска",
+                                    editable=False)
+    vacation_type = models.CharField(verbose_name='Тип отпуска',
+                                     choices=VacationTypeChoices.choices,
+                                     max_length=64,
+                                     null=True,
+                                     blank=False)
+
+    def __str__(self):
+        return f'{self.employee}: {self.vacation_start} {self.vacation_end} '
+
+    class Meta:
+        verbose_name = "отпуск"
+        verbose_name_plural = "отпуска"
+        db_table = 'vacation_core_vacationsmodel'
+        ordering = ['vacation_start', 'employee__last_name']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(day_count__gte=1),
+                name="vacation_day_count_positive",
+            ),
+            models.CheckConstraint(
+                condition=Q(vacation_end__gte=F("vacation_start")),
+                name="vacation_end_not_before_start",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.vacation_start:
+            raise ValidationError("Укажите дату начала отпуска.")
+
+        if self.day_count is None or self.day_count < 1:
+            raise ValidationError(
+                "Количество дней должно быть больше нуля."
+            )
+
+        self.vacation_end = (
+                self.vacation_start
+                + datetime.timedelta(days=self.day_count - 1)
+        )
+
+
+        # Автоматический пересчет даты окончания отпуска
+        update_fields = kwargs.get("update_fields")
+
+        if update_fields is not None:
+            update_fields = set(update_fields)
+
+            if {"vacation_start", "day_count"} & update_fields:
+                update_fields.add("vacation_end")
+
+            kwargs["update_fields"] = update_fields
+
+        super().save(*args, **kwargs)

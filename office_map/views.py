@@ -13,6 +13,9 @@ from django.db.models import Q
 from django.urls import reverse
 from urllib.parse import urlencode
 
+from django.utils import timezone
+from apps.legacy_models.models import VacationsModel
+
 from apps.legacy_models.models import EmployeeModel
 
 from .models import (
@@ -734,9 +737,20 @@ def employee_detail(request, placement_id):
 
     employee = get_employee_data(placement)
 
+    today = timezone.localdate()
+
+    vacation = VacationsModel.objects.filter(
+        employee=placement.employee,
+        vacation_start__lte=today,
+        vacation_end__gte=today,
+    ).first()
+
     html = render_to_string(
         'office_map/partials/employee_detail.html',
-        {'employee': employee},
+        {
+            'employee': employee,
+            'vacation': vacation,
+        },
         request=request,
     )
 
@@ -1007,8 +1021,9 @@ def delete_furniture(request, placement_id):
         is_active=True,
     )
 
-    placement.is_active = False
-    placement.save(update_fields=['is_active'])
+    # placement.is_active = False
+    # placement.save(update_fields=['is_active'])
+    placement.delete()
 
     return JsonResponse({'success': True})
 
@@ -1220,8 +1235,9 @@ def delete_employee(request, placement_id):
             status=403,
         )
 
-    placement.is_active = False
-    placement.save(update_fields=['is_active'])
+    # placement.is_active = False
+    # placement.save(update_fields=['is_active'])
+    placement.delete()
 
     return JsonResponse({'success': True})
 
